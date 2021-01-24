@@ -1,0 +1,51 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+virtual_machines = [
+  {
+    :hostname => "master.stand.com",
+    :box => "bento/ubuntu-20.04",
+    :ip => "192.168.56.2",
+    :memory => 2048,
+    :cpus => 1
+  },
+  {
+    :hostname => "n1.stand.com",
+    :box => "bento/ubuntu-20.04",
+    :ip => "192.168.56.101",
+    :memory => 512,
+    :cpus => 1
+  },
+  {
+    :hostname => "n2.stand.com",
+    :box => "bento/ubuntu-20.04",
+    :ip => "192.168.56.102",
+    :memory => 512,
+    :cpus => 1
+  },
+]
+
+Vagrant.configure(2) do |config|
+
+  # Iterate over virtual_machines hash 
+  virtual_machines.each do |opts|
+    # configure machines
+    config.vm.define opts[:hostname] do |cfg|
+      cfg.vm.box = opts[:box]
+      cfg.vm.hostname = opts[:hostname]
+      cfg.vm.network :private_network, ip: opts[:ip]
+      # provisioning
+      cfg.vm.provision "file", source: ".bashrc", destination: ".bashrc"
+      cfg.vm.provision "shell",
+        inline: "apt-get update && apt-get dist-upgrade --yes && apt-get autoremove --yes && apt-get autoclean --yes"
+      
+      # VirtualBox specific config
+      cfg.vm.provider "virtualbox" do |v|
+        v.check_guest_additions = false,
+        v.name = opts[:hostname],
+        v.memory = opts[:memory],
+        v.cpus = opts[:cpus]
+      end
+    end
+  end
+end
